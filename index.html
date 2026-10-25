@@ -1,350 +1,446 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#050713" />
-  <title>AETHER — Інтерактивний всесвіт</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#10111b">
+  <meta name="description" content="CHRONOS — інтерактивний портрет людини, який змінюється разом із віком.">
+  <title>CHRONOS — Human Age Lab</title>
   <style>
-    :root { color-scheme: dark; --bg:#050713; --panel:rgba(10,14,32,.76); --line:rgba(172,192,255,.13); --muted:#8290b0; --text:#eef3ff; --accent:#a58cff; --cyan:#67efff; }
-    * { box-sizing:border-box }
-    html,body { margin:0; width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--text) }
-    button,input { font:inherit } button { color:inherit }
-    ::selection { background:rgba(130,107,255,.4) }
-    canvas#universe { position:fixed; width:100%; height:100%; inset:0; display:block; cursor:crosshair; z-index:0; touch-action:none }
-    .noise { position:fixed; inset:0; pointer-events:none; opacity:.16; z-index:2; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E") }
-    .vignette { position:fixed; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse 85% 75% at 53% 52%,transparent 25%,rgba(3,4,15,.55) 100%) }
-    .grid {position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.32;background-image:linear-gradient(rgba(119,142,214,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(119,142,214,.055) 1px,transparent 1px);background-size:66px 66px;mask-image:linear-gradient(90deg,black,transparent 80%)}
-    .shell { position:relative;z-index:4;height:100%;pointer-events:none;padding:30px clamp(22px,4vw,68px) }
-    .shell > * { pointer-events:auto }
-    .topbar { display:flex; align-items:center; justify-content:space-between; gap:15px }
-    .brand { display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit }
-    .brand-icon { width:42px;height:42px;border:1px solid rgba(174,155,255,.5);display:grid;place-items:center;border-radius:13px;box-shadow:0 0 28px rgba(106,78,255,.17),inset 0 0 16px rgba(126,111,255,.08);background:rgba(106,78,255,.09) }
-    .brand-icon svg { width:27px; height:27px; }
-    .brand-name {font-size:17px;letter-spacing:.33em;font-weight:850}
-    .brand-sub {font-size:9px;letter-spacing:.32em;color:var(--muted);margin-top:5px;text-transform:uppercase}
-    .status {display:flex;align-items:center;gap:9px;color:#9da9c6;font-size:10px;letter-spacing:.19em;text-transform:uppercase;border:1px solid var(--line);padding:12px 14px;border-radius:100px;background:rgba(8,12,26,.55)}
-    .status i {width:7px;height:7px;background:#64f4ce;box-shadow:0 0 15px #64f4ce;border-radius:50%;animation:pulse 2s infinite}
-    @keyframes pulse {50%{opacity:.4;box-shadow:0 0 6px #64f4ce}}
-    .center-intro {position:absolute;top:22%;left:clamp(22px,4vw,68px);pointer-events:none;max-width:420px;animation:appear 1.2s both}
-    .eyebrow {font-size:11px;letter-spacing:.29em;color:#a69ce7;text-transform:uppercase;display:flex;align-items:center;gap:12px;font-weight:750}
-    .eyebrow:before {content:"";width:27px;height:1px;background:var(--accent)}
-    h1 {font-weight:740;line-height:.97;letter-spacing:-.064em;font-size:clamp(54px,6.2vw,96px);margin:22px 0 20px}
-    h1 span {display:block;color:transparent;background:linear-gradient(100deg,#e9e7ff 5%,#ac9cff 58%,#77e8f5);background-clip:text;-webkit-background-clip:text}
-    .intro-text {font-size:14px;color:#9ca8c5;line-height:1.9;max-width:330px;margin:0}
-    .intro-tip {display:flex;align-items:center;gap:10px;font-size:11px;letter-spacing:.04em;color:#c0c9e1;margin-top:25px}
-    .mouse-icon {width:31px;height:31px;border:1px solid var(--line);border-radius:10px;display:grid;place-items:center;color:#b4a5ff;background:rgba(126,95,255,.09)}
-    .panel {position:absolute;top:118px;right:clamp(22px,4vw,68px);width:312px;max-height:calc(100vh - 185px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3f4562 transparent;border:1px solid rgba(182,195,255,.17);border-radius:19px;background:var(--panel);backdrop-filter:blur(27px);-webkit-backdrop-filter:blur(27px);box-shadow:0 22px 65px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.035);padding:22px;animation:slide 1s .15s both}
-    .panel-head {display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
-    .panel-head strong {font-size:11px;letter-spacing:.21em;font-weight:780}
-    .panel-head span {font-size:10px;color:#8796bc}
-    .panel-title {display:flex;justify-content:space-between;align-items:center;font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#8090b1;margin:20px 0 11px}
-    .modes {display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-    .mode {text-align:left;cursor:pointer;position:relative;background:rgba(255,255,255,.025);border:1px solid rgba(155,171,230,.11);padding:12px 10px;border-radius:11px;transition:all .22s;min-height:64px}
-    .mode:hover {border-color:rgba(173,151,255,.5);background:rgba(146,123,255,.09)}
-    .mode.active {border-color:rgba(168,144,255,.7);background:linear-gradient(140deg,rgba(118,81,243,.24),rgba(56,151,206,.075));box-shadow:inset 0 1px rgba(206,191,255,.09),0 0 23px rgba(133,95,255,.08)}
-    .mode-icon {font-size:19px;line-height:1;margin-bottom:8px;color:#bdadff;display:block}
-    .mode-name {font-size:11px;font-weight:730;letter-spacing:.02em}
-    .mode-key {position:absolute;top:10px;right:10px;color:#6c7797;font-size:9px}
-    .control {margin-bottom:17px}
-    .control-head {display:flex;justify-content:space-between;margin-bottom:9px;font-size:11px;color:#c1c9de}
-    .control output {color:#afa0ff;font-variant-numeric:tabular-nums;font-weight:750}
-    input[type=range] {display:block;width:100%;margin:0;appearance:none;-webkit-appearance:none;background:linear-gradient(90deg,#a18bff var(--fill,50%),#313853 var(--fill,50%));height:3px;border-radius:10px;outline:none;cursor:pointer}
-    input[type=range]::-webkit-slider-thumb {appearance:none;width:13px;height:13px;border-radius:50%;background:#e6e0ff;border:3px solid #9c83ff;box-shadow:0 0 13px rgba(163,130,255,.6)}
-    input[type=range]::-moz-range-thumb {width:9px;height:9px;border-radius:50%;background:#e6e0ff;border:3px solid #9c83ff}
-    .divider {height:1px;background:var(--line);margin:20px 0}
-    .swatches {display:flex;gap:10px}
-    .swatch {width:29px;height:29px;border-radius:50%;border:2px solid transparent;cursor:pointer;position:relative;background:var(--sw);transition:transform .2s,border-color .2s;box-shadow:0 0 15px color-mix(in srgb,var(--sw),transparent 72%)}
-    .swatch:hover {transform:scale(1.12)} .swatch.active {border-color:#e9e9ff;outline:2px solid rgba(176,161,255,.3);outline-offset:2px}
-    .toggles {display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;font-size:11px;color:#c4cbe0}
-    .toggle {width:38px;height:22px;background:#323854;border:1px solid #404861;border-radius:99px;cursor:pointer;padding:3px;transition:background .2s;flex-shrink:0}
-    .toggle::after {content:"";display:block;width:14px;height:14px;border-radius:50%;background:#bec9e3;transition:transform .2s}
-    .toggle[aria-pressed=true] {background:#8067d5;border-color:#9c87ef}
-    .toggle[aria-pressed=true]::after {transform:translateX(15px);background:white}
-    .buttons {display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:22px}
-    .action {display:flex;align-items:center;justify-content:center;gap:7px;border-radius:10px;border:1px solid rgba(163,176,230,.17);background:rgba(255,255,255,.05);padding:11px 8px;cursor:pointer;font-size:11px;font-weight:700;transition:background .2s,border-color .2s}
-    .action:hover {background:rgba(143,122,255,.18);border-color:rgba(170,151,255,.45)}
-    .action.primary {background:linear-gradient(120deg,#7960db,#5f81d9);border-color:#a18cf1;color:white}
-    .bottom {position:absolute;bottom:25px;left:clamp(22px,4vw,68px);right:clamp(22px,4vw,68px);display:flex;justify-content:space-between;align-items:flex-end;gap:22px;pointer-events:none}
-    .stats {display:flex;gap:35px;align-items:flex-end}
-    .stat small {display:block;font-size:9px;color:#8793b1;letter-spacing:.18em;margin-bottom:8px;text-transform:uppercase}
-    .stat strong {font-size:18px;font-weight:600;letter-spacing:.025em;font-variant-numeric:tabular-nums}
-    .stat strong em {font-size:10px;font-style:normal;color:#8793b1;margin-left:4px}
-    .footer-help {font-size:10px;color:#7b87a7;letter-spacing:.05em;text-align:right;line-height:1.8}
-    kbd {border:1px solid rgba(173,186,245,.24);padding:3px 6px;border-radius:5px;color:#c0c8e0;font:inherit;background:rgba(255,255,255,.05)}
-    .panel-toggle {display:none;border:1px solid var(--line);background:rgba(13,17,36,.86);padding:10px;border-radius:11px;cursor:pointer}
-    .toast {position:absolute;bottom:105px;left:50%;transform:translate(-50%,12px);font-size:11px;letter-spacing:.05em;background:rgba(19,23,43,.92);border:1px solid rgba(173,151,255,.35);padding:11px 17px;border-radius:11px;opacity:0;pointer-events:none;transition:opacity .22s,transform .22s;white-space:nowrap}
-    .toast.visible {opacity:1;transform:translate(-50%,0)}
-    @keyframes appear {from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes slide {from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-    @media (max-width:1000px) { .center-intro {top:18%} h1{font-size:64px} .panel{width:285px} }
-    @media (max-width:750px) { .shell{padding:18px} .brand-name{font-size:15px}.status{font-size:0;padding:12px}.status i{width:8px;height:8px} .center-intro{top:94px;left:21px;max-width:290px}.eyebrow{font-size:9px}h1{font-size:clamp(48px,11vw,70px);margin:15px 0}.intro-text{font-size:12px;line-height:1.65;max-width:250px}.intro-tip{margin-top:14px;font-size:10px}.panel-toggle{display:block;pointer-events:auto;position:absolute;top:82px;right:19px;z-index:6}.panel{top:135px;right:18px;width:min(320px,calc(100vw - 36px));max-height:calc(100vh - 190px);z-index:5;display:none}.panel.open{display:block;animation:appear .25s both}.bottom{bottom:17px;left:20px;right:20px}.stats{gap:16px}.stat small{font-size:8px}.stat strong{font-size:14px}.footer-help{display:none} }
-    @media (max-height:580px) and (min-width:751px) {.center-intro{top:120px}.intro-text,.intro-tip{display:none}.panel{top:83px;max-height:calc(100vh - 130px)}.bottom{bottom:12px}}
-    @media (prefers-reduced-motion:reduce) {.center-intro,.panel{animation:none}.status i{animation:none}}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+    :root {--bg:#0e101a;--surface:#171a27;--surface2:#1d2130;--muted:#979bb2;--ink:#f6f6fd;--line:rgba(255,255,255,.11);--accent:#d1b9ff;--orange:#e9ba95}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(ellipse at 84% 13%,#1c1b35 0,transparent 40%),radial-gradient(ellipse at 8% 92%,#171a2d 0,transparent 40%),var(--bg);font-family:'DM Sans',Arial,sans-serif;overflow-x:hidden}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:2px solid #e6d7ff;outline-offset:4px}
+    .shell{max-width:1536px;padding:0 clamp(20px,4.3vw,74px);margin:0 auto}
+    header{height:90px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);position:relative;z-index:3}
+    .brand{display:flex;align-items:center;gap:13px;font-size:16px;font-weight:800;letter-spacing:.12em}
+    .brand-icon{width:39px;height:39px;border:1px solid rgba(206,184,253,.45);border-radius:13px;display:grid;place-items:center;color:#d9c7ff;background:linear-gradient(145deg,rgba(210,186,255,.18),rgba(210,186,255,.01));box-shadow:inset 0 0 14px rgba(200,165,255,.12)}
+    .brand-icon svg{width:22px;height:22px}
+    .top-right{display:flex;align-items:center;gap:18px;color:#aeb0c5;font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+    .live-dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:#a8f3c1;margin-right:9px;box-shadow:0 0 13px #78f4aa}
+    main{display:grid;grid-template-columns:minmax(340px,.78fr) minmax(0,1.22fr);min-height:min(800px,calc(100vh - 91px));gap:clamp(24px,4vw,76px);align-items:stretch}
+    .information{padding:clamp(37px,7vh,85px) 0 40px;display:flex;flex-direction:column;position:relative;z-index:2;max-width:535px}
+    .eyebrow{font-size:11px;text-transform:uppercase;color:#cdb2ff;letter-spacing:.22em;font-weight:800;display:flex;align-items:center;gap:12px}
+    .eyebrow:before{content:'';height:1px;width:23px;background:#cdb2ff}
+    h1{font-family:'Manrope',sans-serif;font-size:clamp(47px,5.5vw,83px);font-weight:700;letter-spacing:-.073em;line-height:1.075;margin:23px 0 20px}
+    h1 em{font-style:normal;background:linear-gradient(95deg,#e5bcab,#c5b2ff 90%);background-clip:text;-webkit-background-clip:text;color:transparent}
+    .intro{color:#a9adc2;font-size:15px;line-height:1.75;max-width:430px;margin:0 0 clamp(28px,4.5vh,45px)}
+    .controls{border:1px solid var(--line);background:linear-gradient(135deg,rgba(36,38,57,.88),rgba(23,26,39,.84));box-shadow:0 20px 60px rgba(0,0,0,.11), inset 0 1px rgba(255,255,255,.045);border-radius:23px;padding:25px clamp(19px,2.2vw,31px) 22px}
+    .control-label{font-size:11px;font-weight:800;letter-spacing:.15em;color:#a7a9c0;text-transform:uppercase;display:block}
+    .gender-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:5px;border:1px solid rgba(255,255,255,.08);border-radius:13px;background:#11131e;margin-top:16px}
+    .gender-switch button{border:0;border-radius:9px;padding:13px 9px;background:transparent;color:#a0a3b9;font-size:13px;font-weight:700;transition:background .25s,color .25s,box-shadow .25s}
+    .gender-switch button[aria-pressed=true]{background:#cfb7ff;color:#181326;box-shadow:0 3px 16px rgba(200,177,250,.2)}
+    .gender-symbol{font-size:18px;display:inline-block;vertical-align:-1px;margin-right:5px;font-family:Arial}
+    .age-control{margin-top:30px}
+    .age-label-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .age-readout{font-size:12px;color:#a6a8be}
+    .age-readout strong{font-family:'Manrope',sans-serif;color:#fff;font-size:22px;font-weight:800;margin-right:4px}
+    .range-area{margin-top:19px;position:relative;padding:12px 0 6px}
+    .range-track{height:7px;background:rgba(255,255,255,.12);border-radius:30px;position:absolute;top:20px;left:0;right:0;pointer-events:none;overflow:hidden}
+    .range-track span{display:block;width:28%;height:100%;background:linear-gradient(90deg,#e8bc9b,#e1bfe2,#cdb7ff);border-radius:30px}
+    input[type=range]{width:100%;height:24px;display:block;position:relative;z-index:1;appearance:none;-webkit-appearance:none;background:transparent;cursor:ew-resize;margin:0}
+    input[type=range]::-webkit-slider-thumb{appearance:none;width:24px;height:24px;border-radius:50%;background:#f5eaff;border:5px solid #bea4ed;box-shadow:0 0 0 5px rgba(205,183,255,.13),0 3px 12px rgba(0,0,0,.35)}
+    input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#f5eaff;border:5px solid #bea4ed;box-shadow:0 0 0 5px rgba(205,183,255,.13)}
+    .ticks{display:flex;justify-content:space-between;color:#777e97;font-size:11px;font-weight:700;margin-top:10px}
+    .stage-label{display:flex;align-items:center;justify-content:space-between;margin:25px 0 0;padding:16px 0 0;border-top:1px solid var(--line)}
+    .stage-label small{font-size:10px;color:#9397ae;text-transform:uppercase;letter-spacing:.14em;display:block;margin-bottom:6px}
+    .stage-label strong{font-size:17px;letter-spacing:-.015em;font-weight:700}
+    .stage-indicator{display:flex;gap:4px}
+    .stage-indicator span{width:17px;height:4px;background:#343748;border-radius:12px;transition:background .2s}
+    .stage-indicator span.active{background:#d1b9ff}
+    .action-row{display:flex;align-items:center;gap:10px;margin-top:20px}
+    .primary{flex:1;border:0;color:#1b1726;background:#e0c9ff;padding:15px 18px;display:flex;justify-content:center;align-items:center;gap:9px;font-size:12px;font-weight:800;border-radius:12px;transition:transform .2s,background .2s}
+    .primary:hover{background:#f0dfff;transform:translateY(-2px)}
+    .primary svg,.secondary svg{width:16px;height:16px}
+    .secondary{width:48px;height:48px;display:grid;place-items:center;border-radius:12px;background:#282a3a;color:#c7c7dc;border:1px solid rgba(255,255,255,.07);transition:background .2s}
+    .secondary:hover{background:#36394d}
+    .extras{display:flex;align-items:center;gap:13px;margin-top:26px}
+    .extras .small-label{font-size:11px;color:#969bb2;white-space:nowrap}
+    .swatches{display:flex;gap:9px}
+    .swatch{width:24px;height:24px;flex-shrink:0;border-radius:50%;border:2px solid transparent;outline:1px solid transparent;transition:all .2s}
+    .swatch.selected{outline:1px solid #d3c2ff;outline-offset:3px;border-color:#262534}
+    .swatch[data-skin="0"]{background:#f0bc9e}.swatch[data-skin="1"]{background:#c48b69}.swatch[data-skin="2"]{background:#936248}.swatch[data-skin="3"]{background:#63412f}
+    .micro-note{margin:24px 0 0;color:#70758d;font-size:11px;line-height:1.55}
+    .micro-note span{color:#bcafce}
+    .visual{position:relative;align-self:stretch;min-height:700px;isolation:isolate;display:flex;align-items:center;justify-content:center}
+    .visual:before{content:'';position:absolute;inset:5% 0 3%;background:radial-gradient(ellipse at 52% 44%,rgba(103,82,146,.23),transparent 43%),radial-gradient(ellipse at 56% 50%,rgba(198,138,104,.09),transparent 56%);z-index:-1;pointer-events:none}
+    .portrait-frame{width:min(100%,720px);height:min(calc(100vh - 126px),760px);min-height:660px;position:relative;overflow:hidden;border-radius:32px;background:radial-gradient(ellipse at 47% 33%,#343246 0%,#272739 43%,#161927 84%);box-shadow:inset 0 1px 0 rgba(255,255,255,.15),inset 0 -2px 40px rgba(12,13,23,.25),0 45px 120px rgba(2,3,9,.24);border:1px solid rgba(255,255,255,.10)}
+    .portrait-frame:before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.22;background-image:url('data:image/svg+xml,%3Csvg viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="n"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23n)" opacity="0.16"/%3E%3C/svg%3E');mix-blend-mode:soft-light;z-index:2}
+    .portrait-frame:after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(255,255,255,.055),inset 0 -95px 110px rgba(12,13,26,.12);z-index:4}
+    canvas{width:100%;height:100%;display:block;position:relative;z-index:1;touch-action:pan-y}
+    .corner{position:absolute;z-index:5;top:26px;left:28px;color:rgba(240,232,255,.73);font-size:10px;letter-spacing:.14em;font-weight:800;pointer-events:none}
+    .corner.right{left:auto;right:29px;display:flex;align-items:center;gap:7px}
+    .corner.right:before{content:'';width:7px;height:7px;border:1px solid #d7c1ff;border-radius:50%}
+    .year-hero{pointer-events:none;position:absolute;bottom:29px;left:34px;z-index:5;display:flex;align-items:baseline;gap:15px}
+    .year-number{font-family:'Manrope',sans-serif;font-weight:800;font-size:clamp(80px,9vw,148px);line-height:.9;letter-spacing:-.095em;color:rgba(255,255,255,.94);text-shadow:0 2px 24px rgba(0,0,0,.12);font-variant-numeric:tabular-nums}
+    .year-side{font-weight:800;letter-spacing:.2em;color:#e5d0ff;font-size:11px;writing-mode:vertical-rl;transform:rotate(180deg);margin-bottom:5px}
+    .portrait-foot{position:absolute;bottom:31px;right:30px;z-index:5;display:flex;gap:6px;align-items:center;opacity:.7;color:#fff;font-size:10px;letter-spacing:.07em}
+    .portrait-foot span{width:20px;height:1px;background:#fff;display:block}
+    .glow-orbit{position:absolute;inset:11% 10%;border-radius:50%;border:1px solid rgba(218,197,252,.13);transform:scaleX(.72) rotate(-19deg);pointer-events:none;z-index:0}
+    .visual-hint{position:absolute;right:-3px;top:50%;writing-mode:vertical-rl;color:#7a7899;font-size:10px;letter-spacing:.15em;transform:translate(140%,-50%)}
+    .footer{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:22px 0 25px;border-top:1px solid var(--line);color:#777c96;font-size:11px}
+    .footer b{font-weight:700;color:#9d9cb5}
+    @media(max-width:1060px){main{grid-template-columns:minmax(300px,1fr) minmax(0,1.05fr);gap:25px}.information{padding-top:55px}h1{font-size:clamp(44px,5.3vw,67px)}.visual{min-height:650px}.portrait-frame{min-height:620px;height:690px}.visual-hint{display:none}}
+    @media(max-width:760px){header{height:70px}.top-right{font-size:10px}.shell{padding:0 20px}main{grid-template-columns:1fr;gap:13px}.information{max-width:none;padding:43px 0 0}.intro{margin-bottom:25px}.controls{padding:20px}.visual{min-height:0;margin:6px 0 26px;order:-1}.portrait-frame{width:100%;height:min(72vh,670px);min-height:440px;border-radius:23px}.information{order:0}.visual{order:1}h1{font-size:clamp(45px,10vw,67px)}.year-number{font-size:96px}.footer{padding-bottom:25px}.visual:before{inset:0}}
+    @media(max-width:440px){.portrait-frame{height:510px}.year-number{font-size:78px}.year-hero{bottom:22px;left:24px}.portrait-foot{bottom:23px;right:20px}.corner{top:21px;left:20px}.corner.right{right:21px}.extras{flex-wrap:wrap}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
   </style>
 </head>
 <body>
-  <canvas id="universe" aria-label="Інтерактивна анімація частинок"></canvas>
-  <div class="vignette"></div><div class="grid"></div><div class="noise"></div>
-  <div class="shell">
-    <header class="topbar">
-      <a class="brand" href="#" aria-label="Aether — на головну">
-        <span class="brand-icon"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M20 3 36 31 20 23 4 31 20 3Z" stroke="#bcaaff" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 12v20M12 25l8 7 8-7" stroke="#6de6ff" stroke-width="1.4"/><circle cx="20" cy="19" r="3" fill="#c9b9ff"/></svg></span>
-        <span><div class="brand-name">AETHER</div><div class="brand-sub">Interactive universe / 001</div></span>
-      </a>
-      <div class="status"><i></i><span>СИСТЕМА АКТИВНА</span></div>
-    </header>
-
-    <section class="center-intro" aria-label="Вступ">
-      <div class="eyebrow">DIGITAL PARTICLE EXPERIMENT</div>
-      <h1>Створи свій <span>всесвіт.</span></h1>
-      <p class="intro-text">Тисячі світлових частинок. Фізика руху. Нескінченна кількість форм. І один творець — ти.</p>
-      <div class="intro-tip"><span class="mouse-icon">✳</span><span>Рухай курсором і натискай на простір</span></div>
+<div class="shell">
+  <header>
+    <div class="brand"><span class="brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 4v8l5 3M5 4l2 2M19 20l-2-2" stroke-linecap="round"/></svg></span> CHRONOS<span style="color:#8f85a9;font-weight:500">.</span></div>
+    <div class="top-right"><span><i class="live-dot"></i>LIVE SIMULATION</span><span style="color:#77758d">/ 001</span></div>
+  </header>
+  <main>
+    <section class="information" aria-label="Керування симуляцією">
+      <div class="eyebrow">INTERACTIVE HUMAN LAB</div>
+      <h1>Час змінює<br><em>кожного.</em></h1>
+      <p class="intro">Одне обличчя. Ціле життя. Переміщуй повзунок, щоб побачити, як змінюються риси, шкіра, волосся та вираз обличчя з кожним роком.</p>
+      <div class="controls">
+        <label class="control-label">01 / ОБЕРИ ПЕРСОНАЖА</label>
+        <div class="gender-switch" role="group" aria-label="Стать персонажа">
+          <button id="maleBtn" type="button" aria-pressed="true"><span class="gender-symbol">♂</span> Чоловік</button>
+          <button id="femaleBtn" type="button" aria-pressed="false"><span class="gender-symbol">♀</span> Жінка</button>
+        </div>
+        <div class="age-control">
+          <div class="age-label-row"><label for="ageSlider" class="control-label">02 / ВІК</label><span class="age-readout"><strong id="ageValue">28</strong> років</span></div>
+          <div class="range-area">
+            <div class="range-track" aria-hidden="true"><span id="rangeFill"></span></div>
+            <input id="ageSlider" type="range" min="0" max="100" value="28" step="1" aria-label="Вік персонажа від нуля до ста років">
+          </div>
+          <div class="ticks"><span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span></div>
+        </div>
+        <div class="stage-label"><div><small>ЖИТТЄВИЙ ЕТАП</small><strong id="stageText">Молодість</strong></div><div class="stage-indicator" id="stageIndicator" aria-hidden="true"><span></span><span></span><span class="active"></span><span></span><span></span><span></span></div></div>
+        <div class="action-row">
+          <button id="playBtn" class="primary" type="button" aria-label="Програти життя від початку до кінця"><svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.6a1 1 0 0 1 1.52-.85l11 7.4a1 1 0 0 1 0 1.7l-11 7.4A1 1 0 0 1 7 19.4V4.6z"/></svg><span id="playText">Прожити життя</span></button>
+          <button class="secondary" id="randomBtn" type="button" title="Випадковий вік" aria-label="Випадковий вік"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m18 14 4 4-4 4M18 2l4 4-4 4M2 18h2c6 0 7-12 14-12h4M2 6h2c3 0 5 3 6 5M14 16c1.3 1.2 2.5 2 4 2h4"/></svg></button>
+          <button class="secondary" id="resetBtn" type="button" title="Повернути на початок" aria-label="Скинути вік"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 1 1 2.4 6.1M3 4v7h7"/></svg></button>
+        </div>
+      </div>
+      <div class="extras"><span class="small-label">ТОН ШКІРИ</span><div class="swatches" role="group" aria-label="Тон шкіри"><button class="swatch selected" data-skin="0" aria-label="Світлий" aria-pressed="true"></button><button class="swatch" data-skin="1" aria-label="Теплий" aria-pressed="false"></button><button class="swatch" data-skin="2" aria-label="Смаглявий" aria-pressed="false"></button><button class="swatch" data-skin="3" aria-label="Темний" aria-pressed="false"></button></div></div>
+      <p class="micro-note"><span>✳</span> Обличчя — процедурна ілюстрація на Canvas, а не реальна фотографія чи медичний прогноз старіння.</p>
     </section>
-
-    <button class="panel-toggle" id="panelToggle" aria-label="Відкрити налаштування" aria-expanded="false">☷ Налаштування</button>
-    <aside class="panel" id="panel" aria-label="Панель налаштувань">
-      <div class="panel-head"><strong>КОНТРОЛЬНА ПАНЕЛЬ</strong><span>V 1.0</span></div>
-      <div class="panel-title"><span>01 / ФОРМА ВСЕСВІТУ</span><span>1 — 6</span></div>
-      <div class="modes" id="modes">
-        <button class="mode active" data-mode="galaxy" aria-pressed="true"><span class="mode-icon">✦</span><span class="mode-name">Галактика</span><span class="mode-key">01</span></button>
-        <button class="mode" data-mode="vortex" aria-pressed="false"><span class="mode-icon">◎</span><span class="mode-name">Вихор</span><span class="mode-key">02</span></button>
-        <button class="mode" data-mode="waves" aria-pressed="false"><span class="mode-icon">≋</span><span class="mode-name">Хвилі</span><span class="mode-key">03</span></button>
-        <button class="mode" data-mode="heart" aria-pressed="false"><span class="mode-icon">♡</span><span class="mode-name">Серце</span><span class="mode-key">04</span></button>
-        <button class="mode" data-mode="orbit" aria-pressed="false"><span class="mode-icon">◉</span><span class="mode-name">Орбіти</span><span class="mode-key">05</span></button>
-        <button class="mode" data-mode="chaos" aria-pressed="false"><span class="mode-icon">✳</span><span class="mode-name">Хаос</span><span class="mode-key">06</span></button>
+    <section class="visual" aria-label="Анімований портрет людини">
+      <div class="glow-orbit" aria-hidden="true"></div>
+      <div class="portrait-frame" id="portraitFrame">
+        <canvas id="portrait" role="img" aria-label="Портрет, що змінюється з віком"></canvas>
+        <div class="corner">SUBJECT / 001</div><div class="corner right">GENERATIVE PORTRAIT</div>
+        <div class="year-hero"><div class="year-number" id="heroAge">28</div><span class="year-side">YEARS OLD</span></div>
+        <div class="portrait-foot"><span></span> TIME IS VISIBLE</div>
       </div>
-
-      <div class="divider"></div>
-      <div class="panel-title"><span>02 / ПАРАМЕТРИ</span><span>LIVE</span></div>
-      <div class="control"><div class="control-head"><label for="density">Кількість частинок</label><output id="densityValue">2 400</output></div><input id="density" type="range" min="400" max="5400" step="200" value="2400"></div>
-      <div class="control"><div class="control-head"><label for="speed">Швидкість анімації</label><output id="speedValue">1.0×</output></div><input id="speed" type="range" min="0" max="300" step="10" value="100"></div>
-      <div class="control"><div class="control-head"><label for="size">Розмір частинок</label><output id="sizeValue">1.5 px</output></div><input id="size" type="range" min="5" max="40" step="5" value="15"></div>
-      <div class="control"><div class="control-head"><label for="gravity">Сила взаємодії</label><output id="gravityValue">65%</output></div><input id="gravity" type="range" min="0" max="200" step="5" value="65"></div>
-      <div class="panel-title"><span>03 / КОЛІР ЕНЕРГІЇ</span></div>
-      <div class="swatches" id="swatches">
-        <button class="swatch active" data-palette="violet" style="--sw:linear-gradient(140deg,#8358ff,#56eeff)" aria-label="Фіолетовий космос" title="Фіолетовий космос" aria-pressed="true"></button>
-        <button class="swatch" data-palette="fire" style="--sw:linear-gradient(140deg,#ff4a80,#ffcf60)" aria-label="Вогонь" title="Вогонь" aria-pressed="false"></button>
-        <button class="swatch" data-palette="ocean" style="--sw:linear-gradient(140deg,#006cff,#7affd5)" aria-label="Океан" title="Океан" aria-pressed="false"></button>
-        <button class="swatch" data-palette="aurora" style="--sw:linear-gradient(140deg,#4aff8a,#b67cff)" aria-label="Аврора" title="Аврора" aria-pressed="false"></button>
-        <button class="swatch" data-palette="gold" style="--sw:linear-gradient(140deg,#ffe8a3,#f2a156)" aria-label="Золото" title="Золото" aria-pressed="false"></button>
-      </div>
-      <div class="toggles"><span>Світлові шлейфи</span><button class="toggle" id="trails" aria-label="Світлові шлейфи" aria-pressed="true"></button></div>
-      <div class="toggles"><span>З'єднання частинок</span><button class="toggle" id="links" aria-label="З'єднання частинок" aria-pressed="false"></button></div>
-      <div class="buttons">
-        <button class="action primary" id="burst">✦ Імпульс</button>
-        <button class="action" id="randomize">⤨ Випадково</button>
-        <button class="action" id="pause">Ⅱ Пауза</button>
-        <button class="action" id="screenshot">↧ Зберегти PNG</button>
-        <button class="action" id="fullscreen">⛶ На весь екран</button>
-        <button class="action" id="reset">↺ Скинути</button>
-      </div>
-    </aside>
-
-    <div class="bottom"><div class="stats"><div class="stat"><small>Частинок</small><strong id="particleStat">2 400</strong></div><div class="stat"><small>Частота кадрів</small><strong><span id="fpsStat">60</span><em>FPS</em></strong></div><div class="stat"><small>Симуляція</small><strong id="modeStat">GALAXY</strong></div></div><div class="footer-help"><span><kbd>1–6</kbd> режим &nbsp; <kbd>Space</kbd> пауза &nbsp; <kbd>R</kbd> імпульс</span><div style="margin-top:11px">AETHER LAB · MADE OF LIGHT AND CODE</div></div></div>
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  </div>
+      <div class="visual-hint" aria-hidden="true">MOVE CURSOR · WATCH THE EYES</div>
+    </section>
+  </main>
+  <footer class="footer"><span><b>CHRONOS</b> / HUMAN AGE EXPERIENCE</span><span>MADE WITH HTML · CSS · CANVAS · JAVASCRIPT</span></footer>
+</div>
 <script>
-(() => {
+(()=>{
   'use strict';
-  const canvas = document.getElementById('universe');
-  const ctx = canvas.getContext('2d', {alpha:false});
-  if (!ctx) { document.getElementById('toast').textContent='Canvas недоступний'; return; }
-  const $ = id => document.getElementById(id);
-  const PI2 = Math.PI*2;
-  const paletteMap = {
-    violet: [[166,117,255],[85,222,255],[254,210,255]],
-    fire: [[255,87,134],[255,165,68],[255,232,167]],
-    ocean: [[56,125,255],[77,232,226],[181,255,231]],
-    aurora: [[96,254,177],[147,119,255],[242,137,242]],
-    gold: [[255,227,148],[247,161,86],[255,247,226]]
-  };
-  const defaults={mode:'galaxy',count:2400,speed:1,size:1.5,gravity:.65,trails:true,links:false,palette:'violet'};
-  const state={...defaults,paused:false};
-  const particles=[];
-  const shocks=[];
-  const mouse={x:0,y:0,active:false,down:false};
-  let W=0,H=0,DPR=1,t=0,frame=0,last=0,fpsTime=0,fpsFrames=0,toastTimer,backgroundStars=[];
-  let cx=0,cy=0,unit=1;
-  const rand=(a,b)=>a+Math.random()*(b-a);
-  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const rgba=(color,a)=>`rgba(${color[0]},${color[1]},${color[2]},${a})`;
-  const fmt=n=>n.toLocaleString('uk-UA');
-
-  function createParticle(i) {
-    const theta=rand(0,PI2),radius=Math.sqrt(Math.random());
-    return {x:rand(0,W),y:rand(0,H),vx:0,vy:0,theta,rad:radius,phase:rand(0,PI2),noise:rand(.2,1.7),band:Math.floor(Math.random()*3),z:rand(.5,1.35),orbit:rand(.1,1),a:rand(.35,1),seed:rand(0,1000),prevX:0,prevY:0};
+  const $=id=>document.getElementById(id);
+  const canvas=$('portrait'),ctx=canvas.getContext('2d',{alpha:true});
+  const frame=$('portraitFrame');
+  const ageSlider=$('ageSlider'),ageValue=$('ageValue'),heroAge=$('heroAge'),rangeFill=$('rangeFill');
+  const maleBtn=$('maleBtn'),femaleBtn=$('femaleBtn'),playBtn=$('playBtn'),playText=$('playText'),playIcon=$('playIcon');
+  let gender='male',skinIndex=0,targetAge=28,currentAge=28,play=false,last=0,look={x:0,y:0},pointer={x:0,y:0};
+  const W=760,H=860;
+  let dpr=1;
+  const palettes=[{skin:'#e2ad91',light:'#ffe0bf',shadow:'#a96757',blush:'#d4827d',lip:'#af6868'}, {skin:'#bd8a70',light:'#ecc09a',shadow:'#81513f',blush:'#a95b59',lip:'#945658'}, {skin:'#92654d',light:'#c0926d',shadow:'#563a31',blush:'#985c4f',lip:'#814f4d'}, {skin:'#694935',light:'#a67452',shadow:'#352820',blush:'#805044',lip:'#704642'}];
+  const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+  const mix=(a,b,t)=>a+(b-a)*clamp(t);
+  const smooth=(a,b,x)=>{let t=clamp((x-a)/(b-a));return t*t*(3-2*t)};
+  const hexRgb=h=>h.startsWith('#')?[parseInt(h.substring(1,3),16),parseInt(h.substring(3,5),16),parseInt(h.substring(5,7),16)]:(h.match(/\d+/g)||[0,0,0]).slice(0,3).map(Number);
+  const blend=(a,b,t)=>{const A=hexRgb(a),B=hexRgb(b);return 'rgb('+A.map((v,i)=>Math.round(mix(v,B[i],t))).join(',')+')'};
+  const rgbA=(h,alpha)=>{const c=hexRgb(h);return `rgba(${c[0]},${c[1]},${c[2]},${alpha})`};
+  const ellipse=(x,y,rx,ry,fill,alpha=1)=>{ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();ctx.ellipse(x,y,Math.max(.01,rx),Math.max(.01,ry),0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();ctx.restore()};
+  const shape=(draw,fill,stroke=null,width=1)=>{ctx.beginPath();draw(ctx);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}};
+  const line=(coords,color,width=1,alpha=1)=>{ctx.save();ctx.globalAlpha=alpha;shape(p=>{p.moveTo(coords[0][0],coords[0][1]);for(let i=1;i<coords.length;i++)p.lineTo(coords[i][0],coords[i][1])},null,color,width);ctx.restore()};
+  const grad=(x0,y0,x1,y1,stops)=>{let g=ctx.createLinearGradient(x0,y0,x1,y1);stops.forEach(([pos,c])=>g.addColorStop(pos,c));return g};
+  const radial=(x,y,r,stops)=>{let g=ctx.createRadialGradient(x,y,1,x,y,r);stops.forEach(([pos,c])=>g.addColorStop(pos,c));return g};
+  const prng=n=>{let s=Math.sin(n*127.13+31.19)*43758.5453;return s-Math.floor(s)};
+  const bez=(a,b,c,d)=>{ctx.moveTo(...a);ctx.bezierCurveTo(...b,...c,...d)};
+  const paths={};
+  function resize(){let r=canvas.getBoundingClientRect();dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr))}
+  if('ResizeObserver'in window)new ResizeObserver(resize).observe(canvas);else window.addEventListener('resize',resize);
+  function stage(a){if(a<3)return ['Немовля',0];if(a<13)return ['Дитинство',1];if(a<20)return ['Підлітковий вік',2];if(a<40)return ['Молодість',2];if(a<60)return ['Зрілість',3];if(a<78)return ['Поважний вік',4];return ['Довголіття',5]}
+  function updateUI(){let a=Math.round(targetAge);ageValue.textContent=a;ageSlider.value=a;rangeFill.style.width=a+'%';let [s,i]=stage(a);$('stageText').textContent=s;[...$('stageIndicator').children].forEach((c,n)=>c.classList.toggle('active',n===i))}
+  function setAge(a){targetAge=clamp(+a,0,100);updateUI()}
+  function setGender(g){gender=g;maleBtn.setAttribute('aria-pressed',g==='male');femaleBtn.setAttribute('aria-pressed',g==='female')}
+  function setPlay(value){play=value;playText.textContent=play?'Зупинити час':'Прожити життя';playIcon.innerHTML=play?'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>':'<path d="M7 4.6a1 1 0 0 1 1.52-.85l11 7.4a1 1 0 0 1 0 1.7l-11 7.4A1 1 0 0 1 7 19.4V4.6z"/>';playBtn.setAttribute('aria-label',play?'Пауза':'Програти життя від початку до кінця')}
+  maleBtn.addEventListener('click',()=>setGender('male'));
+  femaleBtn.addEventListener('click',()=>setGender('female'));
+  ageSlider.addEventListener('input',e=>{setAge(e.target.value);setPlay(false)});
+  playBtn.addEventListener('click',()=>{if(!play&&targetAge>=99)setAge(0);setPlay(!play)});
+  $('resetBtn').addEventListener('click',()=>{setPlay(false);setAge(28)});
+  $('randomBtn').addEventListener('click',()=>{setPlay(false);setAge(Math.floor(Math.random()*101));setGender(Math.random()>.5?'female':'male')});
+  document.querySelectorAll('.swatch').forEach(b=>b.addEventListener('click',()=>{skinIndex=+b.dataset.skin;document.querySelectorAll('.swatch').forEach(e=>{let on=e===b;e.classList.toggle('selected',on);e.setAttribute('aria-pressed',on)})}));
+  frame.addEventListener('pointermove',e=>{const r=frame.getBoundingClientRect();pointer.x=clamp(((e.clientX-r.left)/r.width-.5)*2,-1,1);pointer.y=clamp(((e.clientY-r.top)/r.height-.45)*2,-1,1)});
+  frame.addEventListener('pointerleave',()=>{pointer.x=pointer.y=0});
+  function drawBackdrop(t){
+    ctx.save();for(let i=0;i<42;i++){let x=50+prng(i+10)*W*.9,y=85+prng(i+200)*H*.73,rr=.5+prng(i+30)*1.4;ellipse(x,y,rr,rr,'rgba(218,197,242,.25)',.2+.25*Math.sin(t*.00035+i)**2)}
+    ctx.translate(380,365);ctx.rotate(-.32);
+    ctx.strokeStyle='rgba(219,196,255,.16)';ctx.lineWidth=1.1;ctx.beginPath();ctx.ellipse(0,0,220,340,0,0,Math.PI*2);ctx.stroke();
+    ctx.strokeStyle='rgba(244,198,186,.065)';ctx.lineWidth=18;ctx.beginPath();ctx.ellipse(0,0,230,354,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+    ellipse(380,825,260,30,radial(380,825,260,[[0,'rgba(7,8,15,.35)'],[1,'rgba(7,8,15,0)']]));
   }
-  function syncCount(){
-    while(particles.length<state.count) particles.push(createParticle(particles.length));
-    if(particles.length>state.count) particles.length=state.count;
-    $('particleStat').textContent=fmt(particles.length);
+  function drawShoulders(a,f,child,elder,P,t){
+    const shoulder= mix(f?183:218,120,child*.85)*(1-.10*elder);
+    let neckW=mix(f?59:70,39,child*.86)*(1+.05*elder),neckStart=mix(530,510,child),bottom=740;
+    // rear shoulders
+    shape(p=>{p.moveTo(380-neckW,neckStart);p.bezierCurveTo(380-neckW-6,600,340-shoulder+26,628,380-shoulder,691);p.bezierCurveTo(380-shoulder-24,750,380-shoulder-25,810,380-shoulder-50,900);p.lineTo(380+shoulder+50,900);p.bezierCurveTo(380+shoulder+25,810,380+shoulder+24,750,380+shoulder,691);p.bezierCurveTo(420+shoulder-26,628,380+neckW+6,600,380+neckW,neckStart);p.closePath()},grad(150,590,570,900,[[0,f?'#b7a6b1':'#9593a1'],[.42,f?'#8a859e':'#525b74'],[1,'#202b46']]));
+    // collar, round neck and shirt
+    shape(p=>{p.moveTo(380-neckW-14,599);p.bezierCurveTo(300,617,245,661,380-shoulder-10,688);p.bezierCurveTo(380-shoulder-32,752,380-shoulder-38,825,380-shoulder-57,900);p.lineTo(380+shoulder+57,900);p.bezierCurveTo(380+shoulder+38,825,380+shoulder+32,752,380+shoulder+10,688);p.bezierCurveTo(515,661,460,617,380+neckW+14,599);p.bezierCurveTo(421,643,397,672,380,670);p.bezierCurveTo(363,672,339,643,380-neckW-14,599);p.closePath()},grad(245,620,550,900,[[0,f?'#5c5776':'#4e556b'],[.47,f?'#332f4e':'#2b324b'],[1,'#181d2e']]));
+    // subtly raised shoulder line
+    shape(p=>{p.moveTo(380-shoulder+7,689);p.quadraticCurveTo(270,640,380-neckW-15,605)},null,'rgba(235,218,255,.14)',2);
+    shape(p=>{p.moveTo(380+shoulder-7,689);p.quadraticCurveTo(490,640,380+neckW+15,605)},null,'rgba(235,218,255,.08)',2);
+    // neck
+    shape(p=>{p.moveTo(380-neckW,515);p.bezierCurveTo(380-neckW+8,557,380-neckW-6,603,380-neckW-15,613);p.bezierCurveTo(347,642,412,656,380+neckW+15,613);p.bezierCurveTo(380+neckW+6,603,380+neckW-8,557,380+neckW,515);p.closePath()},grad(380-neckW,520,380+neckW,640,[[0,P.shadow],[.24,P.skin],[.58,P.skin],[1,P.shadow]]));
+    shape(p=>{p.moveTo(380-neckW*.55,541);p.bezierCurveTo(365,591,385,621,380+neckW*.58,541)},null,rgbA('#fff0d5',.1),14);
+    if(!child && a>36){shape(p=>{p.moveTo(380-22,594);p.quadraticCurveTo(380,600,380+21,594)},null,rgbA(P.shadow,.22*elder),2)}
   }
-  function buildStars(){
-    backgroundStars=Array.from({length:Math.min(200,Math.floor(W*H/5300))},()=>({x:rand(0,W),y:rand(0,H),r:rand(.3,1.4),a:rand(.04,.45),phase:rand(0,PI2)}));
+  function headPath(hw,hy,headY,f,child,elder){
+    let top=headY-hy;
+    ctx.beginPath();
+    ctx.moveTo(380,top);
+    ctx.bezierCurveTo(380+hw*.79,top-2,380+hw*1.04,headY-hy*.57,380+hw,headY-hy*.14);
+    ctx.bezierCurveTo(380+hw*1.02,headY+hy*.29,380+hw*.94,headY+hy*.59,380+hw*.68,headY+hy*.82);
+    ctx.bezierCurveTo(380+hw*.52,headY+hy*1.04,380+hw*.22+(f?-2:4),headY+hy*1.03+elder*7,380,headY+hy*1.08+elder*8);
+    ctx.bezierCurveTo(380-hw*.22-(f?-2:4),headY+hy*1.03+elder*7,380-hw*.52,headY+hy*1.04,380-hw*.68,headY+hy*.82);
+    ctx.bezierCurveTo(380-hw*.94,headY+hy*.59,380-hw*1.02,headY+hy*.29,380-hw,headY-hy*.14);
+    ctx.bezierCurveTo(380-hw*1.04,headY-hy*.57,380-hw*.79,top-2,380,top);ctx.closePath()
   }
-  function resize(){
-    const oldW=W||1,oldH=H||1;
-    W=window.innerWidth;H=window.innerHeight;DPR=Math.min(window.devicePixelRatio||1,2);
-    canvas.width=Math.round(W*DPR);canvas.height=Math.round(H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    cx=W*(W>750?.53:.53);cy=H*(W>750?.53:.60);unit=Math.min(W,H);
-    for(const p of particles){p.x=p.x/oldW*W;p.y=p.y/oldH*H;p.vx=0;p.vy=0}
-    buildStars();fillBackground();
-  }
-  function fillBackground(){ctx.globalCompositeOperation='source-over';ctx.fillStyle='#050713';ctx.fillRect(0,0,W,H)}
-  function setMode(mode){
-    if(!['galaxy','vortex','waves','heart','orbit','chaos'].includes(mode))return;
-    state.mode=mode;
-    document.querySelectorAll('.mode').forEach(el=>{const yes=el.dataset.mode===mode;el.classList.toggle('active',yes);el.setAttribute('aria-pressed',String(yes))});
-    $('modeStat').textContent=mode.toUpperCase();
-    for(const p of particles){p.vx*=.12;p.vy*=.12}
-    shock(cx,cy,.65);
-  }
-  function target(p,i,dt){
-    const a=p.theta, r=p.rad, time=t, w=Math.min(unit*1.0,700), spiral=a+time*.095*(.45+p.orbit*.55);
-    switch(state.mode){
-      case 'galaxy': {
-        const arm=i%4, twist=r*4.8, angle=spiral+arm*PI2/4+twist + Math.sin(p.phase+time*.27)*.055;
-        const dist=(.06+r*.60)*w, fat=(1-r)*.065*w;
-        return [cx+Math.cos(angle)*dist+Math.cos(p.phase)*fat, cy+Math.sin(angle)*dist*.61+Math.sin(p.phase)*fat*.48];
-      }
-      case 'vortex': {
-        const rr=(.065+r*.68)*w,angle=spiral+(1-r)*9+time*(.30+r*.24),wave=Math.sin(a*7+time*1.8)*7;
-        return [cx+Math.cos(angle)*(rr+wave),cy+Math.sin(angle)*(rr+wave)*.77];
-      }
-      case 'waves': {
-        const columns=100, x=(i%columns)/(columns-1), row=Math.floor(i/columns), rows=Math.ceil(state.count/columns), y=row/rows;
-        const xx=W*(.10+x*.80), yy=H*(.26+y*.51);
-        return [xx+Math.sin(time*.5+y*17+p.phase)*10, yy+Math.sin(x*17+time*1.9+y*5)*55+Math.cos(x*9-time*1.2+y*9)*20];
-      }
-      case 'heart': {
-        const a2=a+Math.sin(time*.28)*.08;
-        const hx=16*Math.pow(Math.sin(a2),3), hy=13*Math.cos(a2)-5*Math.cos(2*a2)-2*Math.cos(3*a2)-Math.cos(4*a2);
-        const scale=unit*.017*(.2+r*.81)*(1+.035*Math.sin(time*2.5));
-        return [cx+hx*scale,cy-hy*scale];
-      }
-      case 'orbit': {
-        const band=i%6,rad=(.13+band*.095)*w,angle=a+time*(.15+1/(band+2))*(band%2===0?1:-1);
-        const tilt=.28+band*.085, wobble=Math.sin(time*.7+p.phase)*5;
-        return [cx+Math.cos(angle)*(rad+wobble),cy+Math.sin(angle)*rad*tilt+Math.cos(angle)*Math.sin(band*1.4)*rad*.16];
-      }
-      case 'chaos': {
-        const angle=a+time*(p.orbit*.15+.1),rr=(.1+r*.74)*w;
-        const nx=Math.sin(angle*2.5+time*.65+p.phase)*.35+Math.cos(angle*4-time*.23)*.16;
-        const ny=Math.cos(angle*2+time*.54+p.phase)*.27+Math.sin(angle*3+time*.6)*.16;
-        return [cx+Math.cos(angle)*rr*.7+nx*w*.35,cy+Math.sin(angle)*rr*.48+ny*w*.4];
-      }
+  function drawFace(a,f,child,baby,elder,P,t){
+    const hw=mix(f?128:145,130,child*.90)*(1+.045*elder);
+    const hy=mix(f?185:191,170,child*.6)*(1+.005*elder);
+    const headY=350+child*13+elder*3;
+    const faceTop=headY-hy;
+    const eyebrowY=headY-21+child*11+elder*6;
+    const eyeY=headY+7+child*8+elder*6;
+    const eyeX=mix(f?57:61,56,child),eyeW=mix(f?30:28,34,child),eyeH=mix(f?13:11,15,child);
+    const noseY=headY+77+child*1+elder*6;
+    const mouthY=headY+117+child*0+elder*6;
+    const wrinkle=smooth(33,89,a);
+    const hairGray=smooth(39,86,a);
+    const hairBase=blend(f?'#332623':'#242025','#bbb4b5',hairGray*.94);
+    const hairShadow=blend('#1c171c','#777177',hairGray);
+    const hairLight=blend(f?'#705040':'#55403a','#ede6de',hairGray*.90);
+    const lt=blend(P.light,'#d9c1b0',elder*.13), skin=blend(P.skin,'#b39984',elder*.12),shadow=blend(P.shadow,'#85685d',elder*.14);
+    const sway=Math.sin(t*.001)*1.4;
+    ctx.save();ctx.translate(sway,0);
+    // Back of hair for longer hairstyles
+    if(f){
+      let growth=smooth(2,15,a);
+      let bottom=mix(faceTop+80,696,growth);
+      shape(p=>{p.moveTo(380-hw*.58,faceTop-20);p.bezierCurveTo(380-hw*1.48,faceTop-26,380-hw*1.25,headY+100,380-hw*1.35,bottom-65);p.bezierCurveTo(380-hw*1.49,bottom-4,380-hw*.87,bottom+35,380-hw*.48,bottom-16);p.bezierCurveTo(380, bottom+15,380+hw*.79,bottom+27,380+hw*1.23,bottom);p.bezierCurveTo(380+hw*1.43,bottom-48,380+hw*1.36,headY+49,380+hw*1.12,faceTop+39);p.quadraticCurveTo(380,faceTop-80,380-hw*.58,faceTop-20);p.closePath()},grad(200,300,560,700,[[0,hairShadow],[.2,hairBase],[.61,hairLight],[.77,hairBase],[1,hairShadow]]));
+      // back hair waves
+      for(let i=0;i<34;i++){let s=i%2?1:-1,ww=hw*(.94+prng(i+88)*.36),xx=380+s*ww,yy=faceTop+45+prng(i+9)*60;shape(p=>{p.moveTo(xx,yy);p.bezierCurveTo(xx+s*18,yy+125,xx-s*11,bottom-85,xx+s*(10+prng(i+4)*23),bottom-2)},null,i%4===0?rgbA('#fff1e3',.17):rgbA('#130f18',.19),.7+prng(i+8)*1.8)}
     }
-    return [cx,cy];
-  }
-  function shock(x,y,power=1){shocks.push({x,y,r:0,alpha:.9,power});if(shocks.length>8)shocks.shift()}
-  function update(dt){
-    t+=dt*state.speed;
-    const step=Math.min(dt*60,2),interaction=state.gravity;
-    for(let i=0;i<particles.length;i++){
-      const p=particles[i],targetXY=target(p,i,dt);
-      const tx=targetXY[0],ty=targetXY[1];
-      let ax=(tx-p.x)*.014,ay=(ty-p.y)*.014;
-      if(mouse.active){
-        const dx=p.x-mouse.x,dy=p.y-mouse.y,d2=dx*dx+dy*dy+90;
-        const reach=mouse.down?250:195;
-        if(d2<reach*reach){
-          const d=Math.sqrt(d2),strength=(1-d/reach)*interaction*(mouse.down?-5.5:2.7);
-          ax+=dx/d*strength;ay+=dy/d*strength;
-          if(mouse.down){ax+=-dy/d*strength*.13;ay+=dx/d*strength*.13}
-        }
+    // Ear shapes behind head
+    for(let s of [-1,1]){
+      let x=380+s*(hw*.98),y=headY+39+child*4;
+      ellipse(x,y,mix(18,12,child),mix(33,25,child),grad(x-10,y,x+20,y+15,[[0,shadow],[.45,skin],[1,lt]]));
+      shape(p=>{p.moveTo(x-s*4,y-19);p.bezierCurveTo(x+s*14,y-10,x+s*13,y+12,x,y+17);p.bezierCurveTo(x-s*4,y+5,x+s*3,y-4,x+s*8,y+2)},null,rgbA(P.shadow,.5),2.7);
+    }
+    // Entire skin mass, slightly radial for cheek highlights
+    headPath(hw,hy,headY,f,child,elder);
+    let faceFill=ctx.createRadialGradient(340,headY-38,20,390,headY+14,hw*1.58);
+    faceFill.addColorStop(0,lt);faceFill.addColorStop(.49,skin);faceFill.addColorStop(.83,blend(skin,shadow,.35));faceFill.addColorStop(1,shadow);
+    ctx.fillStyle=faceFill;ctx.fill();
+    ctx.save();headPath(hw,hy,headY,f,child,elder);ctx.clip();
+    // Head shape lighting and natural side shading
+    ellipse(380-hw*.57,headY-30,hw*.62,hy*.87,radial(380-hw*.57,headY-30,hw*.96,[[0,rgbA(P.light,.27)],[1,rgbA(P.light,0)]]));
+    ellipse(380+hw*.81,headY+65,hw*.49,hy*.78,radial(380+hw*.81,headY+65,hw*.9,[[0,rgbA(P.shadow,.25)],[1,rgbA(P.shadow,0)]]));
+    // forehead gentle light
+    ellipse(360,headY-111,88,67,radial(360,headY-111,110,[[0,rgbA('#fff3de',.23)],[1,rgbA('#fff3de',0)]]));
+    // cheeks (child fuller, older slightly sunken)
+    for(let s of [-1,1]){
+      let cx=380+s*76;
+      ellipse(cx,headY+80,45+child*19,34+child*12,radial(cx,headY+80,66+child*20,[[0,rgbA(P.blush,.19+child*.18)],[1,rgbA(P.blush,0)]]));
+      ellipse(cx-s*4,headY+57,45,31,radial(cx-s*4,headY+57,60,[[0,rgbA(P.light,.14)],[1,rgbA(P.light,0)]]));
+      if(elder>.08)ellipse(cx,headY+115,52,31,radial(cx,headY+115,75,[[0,rgbA(P.shadow,.16*elder)],[1,rgbA(P.shadow,0)]]));
+    }
+    // Aging texture with fixed positions, no jitter
+    for(let i=0;i<410;i++){
+      let x=380+(prng(i+64)-.5)*hw*1.88,y=headY+(prng(i+364)-.5)*hy*1.91;
+      let dist=((x-380)/hw)**2+((y-headY)/(hy*1.08))**2;
+      if(dist>.96)continue;
+      let ageSpot=elder*prng(i+59);
+      let r=.32+prng(i+98)*(.6+elder*.45);
+      ellipse(x,y,r,r*.9,i%3?'rgba(130,78,58,.08)':'rgba(255,241,218,.20)',(.24+elder*.34)*(.75+ageSpot));
+    }
+    // Freckles children/young people and pigment in older ages
+    for(let i=0;i<70;i++){
+      let s=i%2?1:-1,x=380+s*(36+prng(i+423)*67),y=headY+42+prng(i+532)*60;
+      let alpha=(1-child*.2)*(.08+.16*prng(i+120))+elder*.06;
+      ellipse(x,y,.5+prng(i+1000)*1.8,.45+prng(i+1002)*1.4,rgbA(P.shadow,alpha));
+    }
+    if(elder>.03){
+      for(let i=0;i<62;i++){let s=i%2?1:-1,ex=380+s*(65+prng(i+535)*58),ey=headY+12+prng(i+758)*150;ellipse(ex,ey,1+prng(i+12)*3,1+prng(i+15)*2,rgbA('#704a3c',elder*.05+elder*.16*prng(i+49)))}
+    }
+    ctx.restore();
+    // temples / gentle cheek folds
+    for(let s of [-1,1]){
+      ctx.save();ctx.globalAlpha=.11+wrinkle*.3;
+      shape(p=>{p.moveTo(380+s*(hw*.75),headY+53);p.bezierCurveTo(380+s*(hw*.72),headY+87,380+s*89,headY+98,380+s*86,headY+136)},null,shadow,1.1+wrinkle*1.1);
+      ctx.restore();
+    }
+    // Eye sockets and upper eye shadow
+    for(let s of [-1,1]){
+      let ex=380+s*eyeX;
+      ellipse(ex,eyeY-4,eyeW*1.34,eyeH*2.7,radial(ex,eyeY-5,eyeW*1.48,[[0,rgbA(P.shadow,.20+elder*.10)],[1,rgbA(P.shadow,0)]]));
+      ellipse(ex,eyeY+11,eyeW*1.23,eyeH*1.4,radial(ex,eyeY+11,eyeW*1.8,[[0,rgbA(P.shadow,.11+elder*.14)],[1,rgbA(P.shadow,0)]]));
+      let blink=(Math.sin(t*.0014+1.3)> .995)?Math.max(.06,1-(Math.sin(t*.0014+1.3)-.995)*170):1;
+      let open=eyeH*blink*(1-elder*.20),width=eyeW*(1+child*.04);
+      // almond sclera shape
+      shape(p=>{p.moveTo(ex-width,eyeY);p.quadraticCurveTo(ex,eyeY-open*1.58,ex+width,eyeY-1);p.quadraticCurveTo(ex,eyeY+open*1.25,ex-width,eyeY);p.closePath()},grad(ex,eyeY-open,ex,eyeY+open,[[0,'#e1c8be'],[.6,'#fff1e5'],[1,'#dcbbb2']]));
+      // iris clipped inside white of eyes
+      ctx.save();ctx.beginPath();ctx.moveTo(ex-width,eyeY);ctx.quadraticCurveTo(ex,eyeY-open*1.58,ex+width,eyeY-1);ctx.quadraticCurveTo(ex,eyeY+open*1.25,ex-width,eyeY);ctx.closePath();ctx.clip();
+      const irisX=ex+look.x*3.5,irisY=eyeY+look.y*2;
+      ellipse(irisX,irisY,10.3+child*1,10.5+child*1,radial(irisX,irisY,11,[[0,'#171a1e'],[.40,'#544c3d'],[.75,'#7e7964'],[1,'#34362d']]));
+      ellipse(irisX,irisY,5.3,6,'#171519');ellipse(irisX-3,irisY-3.6,2.8,2.3,'rgba(255,255,255,.94)');ellipse(irisX+4,irisY+3,1.1,1,'rgba(255,255,255,.57)');ctx.restore();
+      // lashes / lids
+      shape(p=>{p.moveTo(ex-width,eyeY);p.quadraticCurveTo(ex,eyeY-open*1.58,ex+width,eyeY-1)},null,blend(P.shadow,'#443029',.48),f?3.6:3.2);
+      shape(p=>{p.moveTo(ex-width+1,eyeY+1);p.quadraticCurveTo(ex,eyeY+open*1.25,ex+width-1,eyeY)},null,rgbA('#673d3c',.35),1.4);
+      // upper fold
+      shape(p=>{p.moveTo(ex-width*.79,eyeY-9-open);p.quadraticCurveTo(ex,eyeY-12-open*1.5,ex+width*.89,eyeY-10-open)},null,rgbA(P.shadow,.37),1.4);
+      if(f&&a>11){for(let i=0;i<3;i++){let x=ex+s*(width-2),y=eyeY-(3+i*2);line([[x,y],[x+s*(6+i*2),y-3-i]],'#433130',1.3+(.5*i),.73)}}
+      // eyebrows length, softness, grey
+      let browY=eyebrowY-(f?3:0);
+      let bx0=ex-eyeW*1.12,bx1=ex+eyeW*1.15;
+      shape(p=>{p.moveTo(bx0,browY+4);p.bezierCurveTo(ex-12,browY-8-(f?4:0),ex+14,browY-5-(f?2:0),bx1,browY+3)},null,hairShadow,f?5.5:8.3-child*2);
+      for(let i=0;i<11;i++){let x=bx0+i*(bx1-bx0)/11;shape(p=>{p.moveTo(x,browY+2-Math.sin(i/11*Math.PI)*8);p.lineTo(x+3,browY-2-Math.sin(i/11*Math.PI)*8)},null,hairLight,.75)}
+      // crow's feet
+      if(wrinkle>.05){let x=ex+s*(width+6),yy=eyeY+2;
+        for(let i=0;i<3;i++)shape(p=>{p.moveTo(x,yy+(i-1)*7);p.quadraticCurveTo(x+s*(8+i),yy+(i-1)*7-5,x+s*(16+3*i),yy+(i-1)*11)},null,rgbA('#68483c',wrinkle*.37),1+elder*.35)
       }
-      for(const s of shocks){
-        const dx=p.x-s.x,dy=p.y-s.y,dist=Math.sqrt(dx*dx+dy*dy)+.001,gap=Math.abs(dist-s.r);
-        if(gap<70){const push=(1-gap/70)*s.power*2.8*interaction*(1-s.r/Math.max(W,H));ax+=dx/dist*push;ay+=dy/dist*push}
-      }
-      const damp=Math.pow(.89,step);
-      p.vx=(p.vx+ax*step)*damp;p.vy=(p.vy+ay*step)*damp;
-      const maxV=24;p.vx=clamp(p.vx,-maxV,maxV);p.vy=clamp(p.vy,-maxV,maxV);
-      p.prevX=p.x;p.prevY=p.y;p.x+=p.vx*step;p.y+=p.vy*step;
+      // under-eye creases
+      if(a>28){shape(p=>{p.moveTo(ex-width*.85,eyeY+19);p.quadraticCurveTo(ex,eyeY+24+elder*5,ex+width*.77,eyeY+17)},null,rgbA(P.shadow,.09+wrinkle*.37),.7+elder*.65)}
     }
-    for(let i=shocks.length-1;i>=0;i--){const s=shocks[i];s.r+=8.5*step;s.alpha-=.015*step;if(s.alpha<=0||s.r>Math.max(W,H)*1.1)shocks.splice(i,1)}
+    // Nose central ridge with softened highlights
+    ellipse(380,noseY-12,17+child*2,39,radial(374,noseY-24,56,[[0,rgbA(P.light,.39)],[1,rgbA(P.light,0)]]));
+    shape(p=>{p.moveTo(380-12,noseY-28);p.bezierCurveTo(374,noseY-3,361,noseY+9,369,noseY+20)},null,rgbA(P.shadow,.17),3);
+    ellipse(380,noseY+19,21+child*2,11,radial(374,noseY+16,29,[[0,rgbA(P.blush,.18)],[1,rgbA(P.shadow,.05)]]));
+    for(let s of [-1,1]){
+      ellipse(380+s*(15+child*1.5),noseY+22,4.1+child,2.5,rgbA(P.shadow,.68));
+      shape(p=>{p.moveTo(380+s*5,noseY+25);p.quadraticCurveTo(380+s*20,noseY+32,380+s*25,noseY+23)},null,rgbA(P.shadow,.29),1.4)
+    }
+    // philtrum
+    shape(p=>{p.moveTo(375,noseY+36);p.quadraticCurveTo(371,noseY+45,374,noseY+49)},null,rgbA(P.shadow,.24),1.5);
+    shape(p=>{p.moveTo(385,noseY+36);p.quadraticCurveTo(389,noseY+45,386,noseY+49)},null,rgbA(P.shadow,.24),1.5);
+    // aging smile/nasolabial lines
+    if(wrinkle>.04){for(let s of [-1,1]){
+      shape(p=>{p.moveTo(380+s*27,noseY+20);p.bezierCurveTo(380+s*42,noseY+39,380+s*45,mouthY+9,380+s*40,mouthY+20)},null,rgbA(P.shadow,.35*wrinkle),1.9);
+      shape(p=>{p.moveTo(380+s*37,noseY+28);p.bezierCurveTo(380+s*49,noseY+46,380+s*48,mouthY+10,380+s*47,mouthY+16)},null,rgbA(P.light,.17*wrinkle),1.3)
+    }}
+    // Lips vary child -> adult -> elder
+    let mw=mix(f?40:42,33,child)*(1-elder*.13),lipH=mix(f?8:6,7,child)*(1-elder*.36);
+    const lip=blend(P.lip,shadow,.20*elder);
+    shape(p=>{p.moveTo(380-mw,mouthY);p.bezierCurveTo(380-mw*.5,mouthY-4,380-mw*.25,mouthY-lipH*1.3,380,mouthY-lipH*.52);p.bezierCurveTo(380+mw*.25,mouthY-lipH*1.3,380+mw*.5,mouthY-4,380+mw,mouthY);p.bezierCurveTo(380+mw*.40,mouthY+lipH*1.08,380-mw*.40,mouthY+lipH*1.08,380-mw,mouthY)},lip);
+    shape(p=>{p.moveTo(380-mw,mouthY);p.quadraticCurveTo(380,mouthY+2.5,380+mw,mouthY)},null,rgbA('#573330',.57),1.8);
+    ellipse(380-4,mouthY-4,mw*.47,lipH*.5,radial(378,mouthY-3,40,[[0,rgbA('#ffdfc5',.22)],[1,rgbA('#ffdfc5',0)]]));
+    // chin small light
+    ellipse(380,mouthY+37,31,15,radial(380,mouthY+39,34,[[0,rgbA(P.light,.27)],[1,rgbA(P.light,0)]]));
+    // forehead lines and glabella
+    if(wrinkle>.02){for(let j=0;j<3;j++){
+      let yy=headY-94+j*20;
+      shape(p=>{p.moveTo(319+j*3,yy);p.bezierCurveTo(348,yy-9,412,yy-8,441-j*3,yy)},null,rgbA(P.shadow,.11+wrinkle*.24),1.2+elder*.8);
+      shape(p=>{p.moveTo(323+j*3,yy-3);p.bezierCurveTo(348,yy-12,412,yy-11,436-j*3,yy-3)},null,rgbA('#fff0df',wrinkle*.11),.9);
+    }
+      for(let s of [-1,1])shape(p=>{p.moveTo(380+s*11,headY-42);p.quadraticCurveTo(380+s*16,headY-30,380+s*14,headY-24)},null,rgbA(P.shadow,wrinkle*.18),1.2)
+    }
+    // subtle beard stubble, especially after 15y. Clean illustration no dark beard blob
+    if(!f&&a>16){let stubble=smooth(17,28,a)*(1-elder*.30);for(let i=0;i<430;i++){
+      let px=380+(prng(i+642)-.5)*hw*1.18,py=headY+hy*.49+prng(i+787)*hy*.53;
+      let dx=Math.abs(px-380);
+      if(dx>hw*.55||py>headY+hy*(1.025-dx/hw*.32))continue;
+      ellipse(px,py,.45,.45,rgbA(hairShadow,.11*stubble));
+    }}
+    // Foreground hair sections
+    drawHair(a,f,child,baby,elder,hw,hy,headY,hairBase,hairShadow,hairLight,hairGray,t);
+    ctx.restore();
   }
-  function render(){
-    ctx.globalCompositeOperation='source-over';
-    if(state.trails){ctx.fillStyle='rgba(5,7,19,.23)';ctx.fillRect(0,0,W,H)}
-    else fillBackground();
-    const palette=paletteMap[state.palette];
-    // Ambient glow behind the formation
-    const gl=ctx.createRadialGradient(cx,cy,5,cx,cy,unit*.58);
-    gl.addColorStop(0,rgba(palette[0],.045));gl.addColorStop(.45,rgba(palette[1],.018));gl.addColorStop(1,'rgba(5,7,19,0)');
-    ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
-    for(const s of backgroundStars){ctx.beginPath();ctx.fillStyle=`rgba(200,215,255,${s.a*(.66+.34*Math.sin(t*.7+s.phase))})`;ctx.arc(s.x,s.y,s.r,0,PI2);ctx.fill()}
-    ctx.globalCompositeOperation='lighter';
-    if(state.links){
-      ctx.lineWidth=.48;
-      // Connect a sampled, bounded set of particles to avoid O(n²) slowdowns.
-      const stride=Math.max(1,Math.floor(particles.length/330));
-      const grid=new Map(), cell=48;
-      for(let i=0;i<particles.length;i+=stride){const p=particles[i],gx=Math.floor(p.x/cell),gy=Math.floor(p.y/cell),key=gx+','+gy;if(!grid.has(key))grid.set(key,[]);grid.get(key).push(p)}
-      for(const [key,group] of grid){const [gx,gy]=key.split(',').map(Number);for(const p of group){let n=0;for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++){const neighbors=grid.get((gx+ox)+','+(gy+oy));if(!neighbors)continue;for(const q of neighbors){if(q===p||n>=4)continue;const dx=p.x-q.x,dy=p.y-q.y,d2=dx*dx+dy*dy;if(d2>80&&d2<2200){ctx.strokeStyle=rgba(palette[1],.07*(1-d2/2200));ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();n++}}}}}
+  function drawHair(a,f,child,baby,elder,hw,hy,headY,hairBase,hairShadow,hairLight,hairGray,t){
+    const top=headY-hy;
+    let bald=!f?smooth(49,91,a)*.71:0;
+    if(baby>.5){
+      ctx.save();ctx.globalAlpha=1-baby*.63;
+      shape(p=>{p.moveTo(380-hw*.72,top+27);p.bezierCurveTo(380-hw*.85,top-29,380+hw*.44,top-45,380+hw*.82,top+40);p.bezierCurveTo(400,top+7,350,top+30,380-hw*.72,top+27)},hairBase);ctx.restore();
+      for(let i=0;i<12;i++){let x=340+prng(i+50)*83,y=top+14+prng(i+77)*20;shape(p=>{p.moveTo(x,y);p.quadraticCurveTo(x+11,y-18,x+24,y-8)},null,hairLight,.8)}
+      return;
     }
-    // Palette grouped strokes reduce canvas state changes.
-    for(let band=0;band<3;band++){
-      const color=palette[band];
-      ctx.fillStyle=rgba(color,.78);ctx.strokeStyle=rgba(color,.22);
-      ctx.lineWidth=.65;
-      ctx.beginPath();
-      for(let i=0;i<particles.length;i++){
-        const p=particles[i];if(p.band!==band)continue;
-        const size=state.size*p.z;
-        ctx.moveTo(p.x+size,p.y);ctx.arc(p.x,p.y,size,0,PI2);
+    if(!f){
+      let recede=bald*hw*.60;
+      shape(p=>{
+        p.moveTo(380-hw*.99,headY-hy*.26);
+        p.bezierCurveTo(380-hw*1.15,top-13,380-hw*.55,top-43+recede*.35,380-recede,top-27+recede*.34);
+        p.bezierCurveTo(370,top-49+recede,395,top-49+recede,380+recede,top-27+recede*.34);
+        p.bezierCurveTo(380+hw*.67,top-39+recede*.1,380+hw*1.15,top-9,380+hw*.99,headY-hy*.26);
+        p.bezierCurveTo(380+hw*.99,headY-hy*.16,380+hw*.93,headY-hy*.08,380+hw*.90,headY-hy*.04);
+        p.bezierCurveTo(380+hw*.90,top+37,380+hw*.85,top+38,380+hw*.75,top+49);
+        p.bezierCurveTo(380+hw*.69,top+25,380+hw*.64,top+10,380+hw*.57,top+recede*.23);
+        p.bezierCurveTo(375,top+30+recede*.49,365,top+30+recede*.49,380-hw*.65,top+recede*.28);
+        p.bezierCurveTo(380-hw*.67,top+10,380-hw*.76,top+25,380-hw*.78,top+48);
+        p.bezierCurveTo(380-hw*.88,top+45,380-hw*.99,headY-hy*.14,380-hw*.99,headY-hy*.26);p.closePath()
+      },grad(254,top,525,top+165,[[0,hairShadow],[.35,hairBase],[.68,hairLight],[1,hairShadow]]));
+      // individually flowing hair strands, clipped to front cap
+      ctx.save();ctx.beginPath();ctx.moveTo(380-hw,headY-hy*.2);ctx.lineTo(380-hw,top-50);ctx.lineTo(380+hw,top-50);ctx.lineTo(380+hw,headY-hy*.1);ctx.lineTo(380,top+recede+35);ctx.closePath();ctx.clip();
+      for(let i=0;i<150;i++){
+        let xx=380-hw*.87+prng(i+10)*hw*1.74, yy=top-25+prng(i+32)*80;
+        shape(p=>{p.moveTo(xx,yy);p.bezierCurveTo(xx+30,yy-26,xx+50,yy+4,xx+52,yy+21)},null,i%4===0?rgbA('#fff1da',.14):rgbA('#100e14',.15),.45+prng(i+61)*1.05)
       }
-      ctx.fill();
-      if(state.trails){ctx.beginPath();for(let i=0;i<particles.length;i+=2){const p=particles[i];if(p.band!==band)continue;const dx=p.x-p.prevX,dy=p.y-p.prevY;if(dx*dx+dy*dy>1){ctx.moveTo(p.prevX,p.prevY);ctx.lineTo(p.x,p.y)}}ctx.stroke()}
+      ctx.restore();
+      // Older male grey temples, balding at top
+      if(elder>.03){for(let s of [-1,1]){
+        let x=380+s*hw*.91;ellipse(x,top+118,hw*.095,51,radial(x,top+113,65,[[0,rgbA('#d8d1cd',elder*.65)],[1,rgbA('#d8d1cd',0)]]))
+      }}
+    }else{
+      // Parted hair, face-framing locks
+      let part=380-22,volume=mix(21,39,smooth(3,20,a));
+      shape(p=>{p.moveTo(380-hw*1.09,headY+19);p.bezierCurveTo(380-hw*1.12,top-92,300,top-68,part,top-55);p.bezierCurveTo(319,top-67,380+hw*1.2,top-88,380+hw*1.05,headY+9);p.bezierCurveTo(380+hw*1.03,headY+82,380+hw*.94,headY+113,380+hw*.88,headY+144);p.bezierCurveTo(380+hw*.94,headY+20,380+hw*.83,top+89,part,top+5);p.bezierCurveTo(320,top+43,380-hw*.90,top+104,380-hw*.85,headY+138);p.bezierCurveTo(380-hw*1.05,headY+108,380-hw*1.08,headY+48,380-hw*1.09,headY+19);p.closePath()},grad(240,top,520,headY,[[0,hairShadow],[.20,hairBase],[.50,hairLight],[.67,hairBase],[1,hairShadow]]));
+      // highlight locks, avoid excess over face
+      for(let s of [-1,1]){for(let i=0;i<28;i++){
+        let xx=380+s*(30+i*3.3),y=top-35+prng(i+12)*13;
+        shape(p=>{p.moveTo(xx,y);p.bezierCurveTo(xx+s*37,y+24,380+s*(hw*.95),headY-53,380+s*(hw*.95+12+prng(i+23)*10),headY+115+prng(i+8)*100)},null,i%3===0?rgbA('#fff0da',.18):rgbA('#1b1019',.14),.75+prng(i+5)*1.4)
+      }}
+      // hair part line
+      shape(p=>{p.moveTo(part,top-49);p.quadraticCurveTo(part+2,top-19,part+9,top+4)},null,rgbA('#f3c5a6',.32),2);
+      // crown glow
+      ellipse(380-55,top-38,76,32,radial(320,top-40,111,[[0,rgbA('#fff2db',.1)],[1,rgbA('#fff2db',0)]]));
     }
-    for(const s of shocks){ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,PI2);ctx.strokeStyle=rgba(palette[1],s.alpha*.28);ctx.lineWidth=1.5;ctx.stroke();ctx.beginPath();ctx.arc(s.x,s.y,s.r*.87,0,PI2);ctx.strokeStyle=rgba(palette[0],s.alpha*.12);ctx.lineWidth=9;ctx.stroke()}
-    if(mouse.active){
-      ctx.beginPath();ctx.arc(mouse.x,mouse.y,19+Math.sin(t*2)*2,0,PI2);ctx.strokeStyle=rgba(palette[1],.35);ctx.lineWidth=1;ctx.stroke();
-      ctx.beginPath();ctx.arc(mouse.x,mouse.y,3.2,0,PI2);ctx.fillStyle=rgba(palette[1],.8);ctx.fill();
-    }
-    ctx.globalCompositeOperation='source-over';
   }
+  function render(t){
+    const width=canvas.width,height=canvas.height;
+    if(width<1||height<1)return;
+    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,width,height);
+    const sx=width/W,sy=height/H,scale=Math.max(sx,sy);
+    // cover the frame: use consistent central crop on different aspect ratios
+    ctx.setTransform(scale,0,0,scale,(width-W*scale)/2,(height-H*scale)/2);
+    const a=currentAge,f=gender==='female',P=palettes[skinIndex];
+    const baby=1-smooth(1,6,a),child=1-smooth(5,20,a),elder=smooth(48,91,a);
+    look.x=mix(look.x,pointer.x,.075);look.y=mix(look.y,pointer.y,.075);
+    drawBackdrop(t);
+    drawShoulders(a,f,child,elder,P,t);
+    drawFace(a,f,child,baby,elder,P,t);
+    // foreground lower atmospheric haze
+    shape(p=>{p.rect(0,740,W,120)},grad(0,741,0,860,[[0,'rgba(16,18,29,0)'],[1,'rgba(15,17,29,.26)']]));
+  }
+  let heroShown=-1;
   function tick(now){
-    const dt=Math.min((now-last)/1000||.016,.034);last=now;
-    if(!state.paused){update(dt);render()}
-    fpsFrames++;if(now-fpsTime>650){$('fpsStat').textContent=Math.round(fpsFrames*1000/(now-fpsTime||1));fpsFrames=0;fpsTime=now}
-    frame++;requestAnimationFrame(tick);
+    const dt=Math.min((now-last)||16.6,70);last=now;
+    if(play){if(targetAge<100){targetAge=Math.min(100,targetAge+dt*.0062);updateUI()}else{setPlay(false)}}
+    let ease=1-Math.exp(-dt*.013);
+    currentAge=mix(currentAge,targetAge,ease);
+    if(Math.abs(currentAge-targetAge)<.012)currentAge=targetAge;
+    const display=Math.round(currentAge);
+    if(heroShown!==display){heroAge.textContent=String(display).padStart(2,'0');heroShown=display;canvas.setAttribute('aria-label',`Процедурний портрет: ${gender==='female'?'жінка':'чоловік'}, ${display} років`)}
+    render(now);
+    requestAnimationFrame(tick)
   }
-  function notify(message){const el=$('toast');el.textContent=message;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),2300)}
-  function setSlider(id,value){const el=$(id);el.value=value;const n=Number(value),ratio=(n-Number(el.min))/(Number(el.max)-Number(el.min));el.style.setProperty('--fill',(ratio*100)+'%');
-    if(id==='density'){state.count=n;$('densityValue').textContent=fmt(n);syncCount()}
-    if(id==='speed'){state.speed=n/100;$('speedValue').textContent=state.speed.toFixed(1)+'×'}
-    if(id==='size'){state.size=n/10;$('sizeValue').textContent=state.size.toFixed(1)+' px'}
-    if(id==='gravity'){state.gravity=n/100;$('gravityValue').textContent=n+'%'}
-  }
-  for(const id of ['density','speed','size','gravity']){$(id).addEventListener('input',e=>setSlider(id,e.target.value));setSlider(id,$(id).value)}
-  document.querySelectorAll('.mode').forEach(el=>el.addEventListener('click',()=>setMode(el.dataset.mode)));
-  document.querySelectorAll('.swatch').forEach(el=>el.addEventListener('click',()=>{state.palette=el.dataset.palette;document.querySelectorAll('.swatch').forEach(e=>{e.classList.toggle('active',e===el);e.setAttribute('aria-pressed',String(e===el))})}));
-  for(const id of ['trails','links'])$(id).addEventListener('click',()=>{state[id]=!state[id];$(id).setAttribute('aria-pressed',String(state[id]));if(!state.trails)fillBackground()});
-  $('burst').addEventListener('click',()=>shock(cx,cy,1.8));
-  $('randomize').addEventListener('click',()=>{const modes=['galaxy','vortex','waves','heart','orbit','chaos'];const pals=Object.keys(paletteMap);setMode(modes[Math.floor(rand(0,modes.length))]);const sw=document.querySelector(`[data-palette="${pals[Math.floor(rand(0,pals.length))]}"]`);sw.click();shock(cx,cy,1.2);notify('Нова конфігурація згенерована')});
-  function togglePause(){state.paused=!state.paused;$('pause').textContent=state.paused?'▶ Продовжити':'Ⅱ Пауза';if(!state.paused)last=performance.now()}
-  $('pause').addEventListener('click',togglePause);
-  $('reset').addEventListener('click',()=>{setMode(defaults.mode);setSlider('density',defaults.count);setSlider('speed',100);setSlider('size',15);setSlider('gravity',65);document.querySelector('[data-palette="violet"]').click();for(const id of ['trails','links']){state[id]=defaults[id];$(id).setAttribute('aria-pressed',String(state[id]))}if(state.paused)togglePause();fillBackground();notify('Налаштування скинуто')});
-  $('screenshot').addEventListener('click',()=>{try{const link=document.createElement('a');link.download='aether-universe.png';link.href=canvas.toDataURL('image/png');document.body.appendChild(link);link.click();link.remove();notify('Зображення збережено')}catch(e){notify('Не вдалося зберегти PNG')}});
-  $('fullscreen').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){notify('Повноекранний режим недоступний')}});
-  $('panelToggle').addEventListener('click',()=>{const expanded=$('panel').classList.toggle('open');$('panelToggle').setAttribute('aria-expanded',String(expanded))});
-  canvas.addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true});
-  canvas.addEventListener('pointerdown',e=>{mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true;mouse.down=true;try{canvas.setPointerCapture(e.pointerId)}catch(_){}shock(e.clientX,e.clientY,1.65)});
-  canvas.addEventListener('pointerup',()=>mouse.down=false);
-  canvas.addEventListener('pointercancel',()=>{mouse.down=false;mouse.active=false});
-  canvas.addEventListener('pointerleave',()=>{if(!mouse.down)mouse.active=false});
-  window.addEventListener('blur',()=>mouse.down=false);
-  window.addEventListener('keydown',e=>{
-    if(e.target instanceof HTMLElement&&['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;
-    if(e.code==='Space'){e.preventDefault();togglePause()}
-    else if(e.key>='1'&&e.key<='6'){setMode(['galaxy','vortex','waves','heart','orbit','chaos'][Number(e.key)-1])}
-    else if(e.key.toLowerCase()==='r'){shock(mouse.active?mouse.x:cx,mouse.active?mouse.y:cy,1.8)}
-  });
-  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(resize,100)});
-  resize();syncCount();requestAnimationFrame(tick);
+  updateUI();resize();requestAnimationFrame(tick);
 })();
 </script>
 </body>
